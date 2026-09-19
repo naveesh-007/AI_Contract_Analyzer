@@ -88,6 +88,16 @@ def create_app() -> FastAPI:
         )
 
     # ── Routes ────────────────────────────────────────────────────────────────
+    @app.get("/")
+    async def root():
+        return {
+            "status": "online",
+            "name": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "docs": "/api/docs",
+            "health": "/api/health",
+        }
+
     app.include_router(api_router)
 
     return app
