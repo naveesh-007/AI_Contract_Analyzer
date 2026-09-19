@@ -116,10 +116,28 @@ async def upload_document(
     )
 
 
+# ── List all documents ─────────────────────────────────────────────────────────
+
+
+@router.get(
+    "",
+    response_model=list[DocumentOut],
+    summary="List all uploaded documents",
+)
+async def list_documents(
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+) -> list[DocumentOut]:
+    repo = DocumentRepository(db)
+    docs = await repo.list_documents(limit=limit)
+    return [DocumentOut.model_validate(d) for d in docs]
+
+
 # ── Get document metadata ─────────────────────────────────────────────────────
 
 
 @router.get(
+
     "/{document_id}",
     response_model=DocumentOut,
     summary="Get document metadata and processing status",

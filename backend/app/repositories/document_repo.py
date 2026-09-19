@@ -77,6 +77,12 @@ class DocumentRepository:
         )
         return result.scalar_one_or_none()
 
+    async def list_documents(self, limit: int = 50) -> list[Document]:
+        result = await self.session.execute(
+            select(Document).order_by(Document.created_at.desc()).limit(limit)
+        )
+        return list(result.scalars().all())
+
     # ── Update ────────────────────────────────────────────────────────────────
 
     async def update_status(
@@ -87,3 +93,14 @@ class DocumentRepository:
             doc.status = status
             await self.session.flush()
         return doc
+
+    # ── Delete ────────────────────────────────────────────────────────────────
+
+    async def delete_document(self, document_id: uuid.UUID) -> bool:
+        doc = await self.get_document(document_id)
+        if doc:
+            await self.session.delete(doc)
+            await self.session.flush()
+            return True
+        return False
+

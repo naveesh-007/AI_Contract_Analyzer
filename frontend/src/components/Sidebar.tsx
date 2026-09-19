@@ -9,7 +9,7 @@ interface SidebarLink {
 
 const links: SidebarLink[] = [
   { to: '/', label: 'Upload Document', icon: '⬆️' },
-  { to: '/dashboard', label: 'Dashboard', icon: '📊', badge: 'Soon' },
+  { to: '/dashboard', label: 'Dashboard', icon: '📊' },
 ]
 
 export function Sidebar() {

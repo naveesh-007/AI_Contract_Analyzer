@@ -58,6 +58,17 @@ export async function getDocument(documentId: string): Promise<Document> {
 }
 
 /**
+ * List all uploaded documents.
+ */
+export async function listDocuments(limit: number = 50): Promise<Document[]> {
+  const res = await apiClient.get<Document[]>('/api/documents', {
+    params: { limit },
+  })
+  return res.data
+}
+
+
+/**
  * Fetch page-level extracted text for a document.
  */
 export async function getDocumentText(documentId: string): Promise<DocumentTextResponse> {

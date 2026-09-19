@@ -15,6 +15,7 @@ import { ClauseDetail } from '../components/ClauseDetail'
 import { DocumentViewer } from '../components/DocumentViewer'
 import { ContractChatPanel } from '../components/ContractChatPanel'
 import { StandardClauseComparison } from '../components/StandardClauseComparison'
+import { DocumentVisualizer } from '../components/DocumentVisualizer'
 import { LegalDisclaimer } from '../components/LegalDisclaimer'
 import { LoadingState } from '../components/LoadingState'
 import { ErrorMessage } from '../components/ErrorMessage'
@@ -41,11 +42,11 @@ export function DocumentAnalysisPage() {
   const [activeFilter, setActiveFilter] = useState<RiskFilter>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
-  // Column 3 tab switcher: 'chat' | 'detail' | 'comparison'
-  const [rightTab, setRightTab] = useState<'chat' | 'detail' | 'comparison'>('chat')
+  // Column 3 tab switcher: 'chat' | 'detail' | 'comparison' | 'visuals'
+  const [rightTab, setRightTab] = useState<'chat' | 'detail' | 'comparison' | 'visuals'>('chat')
 
-  // Mobile active tab: 'clauses' | 'viewer' | 'detail' | 'chat' | 'comparison'
-  const [mobileTab, setMobileTab] = useState<'clauses' | 'viewer' | 'detail' | 'chat' | 'comparison'>('clauses')
+  // Mobile active tab: 'clauses' | 'viewer' | 'detail' | 'chat' | 'comparison' | 'visuals'
+  const [mobileTab, setMobileTab] = useState<'clauses' | 'viewer' | 'detail' | 'chat' | 'comparison' | 'visuals'>('clauses')
 
 
   // Processing & Loading States
@@ -314,8 +315,24 @@ export function DocumentAnalysisPage() {
           </div>
         </div>
 
-        {/* Actions, Report Download & Re-Analyze */}
+        {/* Actions, Report Download, Visual Analytics & Re-Analyze */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => setRightTab(rightTab === 'visuals' ? 'chat' : 'visuals')}
+            className={`btn-secondary ${rightTab === 'visuals' ? 'active' : ''}`}
+            style={{
+              padding: '8px 14px',
+              fontSize: '12px',
+              background: rightTab === 'visuals' ? 'rgba(108, 142, 245, 0.25)' : 'rgba(108, 142, 245, 0.1)',
+              borderColor: rightTab === 'visuals' ? 'var(--color-accent)' : 'rgba(108, 142, 245, 0.3)',
+              color: 'var(--color-accent-light)',
+            }}
+            title="Toggle Visual Risk Analytics & Distribution"
+          >
+            📊 Visual Analytics
+          </button>
+
           <button
             type="button"
             id="download-report-btn"
@@ -334,15 +351,15 @@ export function DocumentAnalysisPage() {
             style={{ padding: '8px 14px', fontSize: '12px' }}
             title="Re-run AI clause extraction and risk analysis"
           >
-            🤖 Re-Analyze Document
+            🤖 Re-Analyze
           </button>
 
           <Link
-            to="/"
+            to="/dashboard"
             className="btn-primary"
             style={{ padding: '8px 16px', fontSize: '12px' }}
           >
-            ⬆️ Upload Another
+            📊 All Contracts
           </Link>
         </div>
 
@@ -364,13 +381,25 @@ export function DocumentAnalysisPage() {
           borderBottom: '1px solid var(--color-border)',
           padding: '6px 12px',
           gap: '8px',
+          overflowX: 'auto',
         }}
       >
         <button
           type="button"
+          onClick={() => {
+            setMobileTab('visuals')
+            setRightTab('visuals')
+          }}
+          className={`btn-secondary ${mobileTab === 'visuals' ? 'active' : ''}`}
+          style={{ flex: 1, padding: '8px', fontSize: '11px', whiteSpace: 'nowrap' }}
+        >
+          📊 Visuals
+        </button>
+        <button
+          type="button"
           onClick={() => setMobileTab('clauses')}
           className={`btn-secondary ${mobileTab === 'clauses' ? 'active' : ''}`}
-          style={{ flex: 1, padding: '8px', fontSize: '11px' }}
+          style={{ flex: 1, padding: '8px', fontSize: '11px', whiteSpace: 'nowrap' }}
         >
           📋 Clauses ({clauses.length})
         </button>
@@ -378,9 +407,9 @@ export function DocumentAnalysisPage() {
           type="button"
           onClick={() => setMobileTab('viewer')}
           className={`btn-secondary ${mobileTab === 'viewer' ? 'active' : ''}`}
-          style={{ flex: 1, padding: '8px', fontSize: '11px' }}
+          style={{ flex: 1, padding: '8px', fontSize: '11px', whiteSpace: 'nowrap' }}
         >
-          📑 Document Viewer
+          📑 Viewer
         </button>
         <button
           type="button"
@@ -389,7 +418,7 @@ export function DocumentAnalysisPage() {
             setRightTab('chat')
           }}
           className={`btn-secondary ${mobileTab === 'chat' ? 'active' : ''}`}
-          style={{ flex: 1, padding: '8px', fontSize: '11px' }}
+          style={{ flex: 1, padding: '8px', fontSize: '11px', whiteSpace: 'nowrap' }}
         >
           💬 Ask AI
         </button>
@@ -400,7 +429,7 @@ export function DocumentAnalysisPage() {
             setRightTab('detail')
           }}
           className={`btn-secondary ${mobileTab === 'detail' ? 'active' : ''}`}
-          style={{ flex: 1, padding: '8px', fontSize: '11px' }}
+          style={{ flex: 1, padding: '8px', fontSize: '11px', whiteSpace: 'nowrap' }}
         >
           💡 Detail
         </button>
@@ -411,7 +440,7 @@ export function DocumentAnalysisPage() {
             setRightTab('comparison')
           }}
           className={`btn-secondary ${mobileTab === 'comparison' ? 'active' : ''}`}
-          style={{ flex: 1, padding: '8px', fontSize: '11px' }}
+          style={{ flex: 1, padding: '8px', fontSize: '11px', whiteSpace: 'nowrap' }}
         >
           ⚖️ Benchmarks
         </button>
@@ -501,7 +530,7 @@ export function DocumentAnalysisPage() {
             flexDirection: 'column',
             gap: '8px',
           }}
-          className={`column-detail ${mobileTab !== 'detail' && mobileTab !== 'chat' && mobileTab !== 'comparison' ? 'mobile-hidden' : ''}`}
+          className={`column-detail ${mobileTab !== 'detail' && mobileTab !== 'chat' && mobileTab !== 'comparison' && mobileTab !== 'visuals' ? 'mobile-hidden' : ''}`}
         >
           {/* Header Mode Switcher Tabs */}
           <div
@@ -513,8 +542,29 @@ export function DocumentAnalysisPage() {
               border: '1px solid var(--color-border)',
               flexShrink: 0,
               gap: '4px',
+              overflowX: 'auto',
             }}
           >
+            <button
+              type="button"
+              id="tab-visuals-btn"
+              onClick={() => setRightTab('visuals')}
+              style={{
+                flex: 1,
+                padding: '7px 8px',
+                borderRadius: '8px',
+                border: 'none',
+                background: rightTab === 'visuals' ? 'var(--color-accent)' : 'transparent',
+                color: rightTab === 'visuals' ? '#ffffff' : 'var(--color-text-secondary)',
+                fontWeight: 700,
+                fontSize: '11.5px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              📊 Visuals
+            </button>
             <button
               type="button"
               id="tab-ask-contract-btn"
@@ -578,7 +628,21 @@ export function DocumentAnalysisPage() {
           </div>
 
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            {rightTab === 'chat' ? (
+            {rightTab === 'visuals' ? (
+              <div style={{ height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
+                <DocumentVisualizer
+                  document={doc}
+                  summary={summary}
+                  clauses={clauses}
+                  pages={pages}
+                  selectedClauseId={selectedClause?.id || null}
+                  onSelectClause={handleSelectClause}
+                  activeFilter={activeFilter}
+                  onFilterChange={setActiveFilter}
+                  compact={true}
+                />
+              </div>
+            ) : rightTab === 'chat' ? (
               <ContractChatPanel
                 documentId={docId}
                 clauses={clauses}
