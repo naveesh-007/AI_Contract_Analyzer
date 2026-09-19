@@ -2,8 +2,10 @@
 Application settings loaded from environment variables.
 Never hardcode secrets — copy .env.example to .env and fill in values.
 """
+import json
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,6 +38,19 @@ class Settings(BaseSettings):
         "http://localhost:4173",   # Vite preview
         "http://localhost:3000",
     ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, str):
+            v_stripped = v.strip()
+            if v_stripped.startswith("[") and v_stripped.endswith("]"):
+                try:
+                    return json.loads(v_stripped)
+                except Exception:
+                    pass
+            return [i.strip() for i in v_stripped.split(",") if i.strip()]
+        return v
 
     # ── File Upload ───────────────────────────────────────────────────────────
     UPLOAD_DIR: str = "uploads"
