@@ -25,10 +25,10 @@ class Settings(BaseSettings):
     # Supabase direct connection:
     #   postgresql+asyncpg://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
     # Or use the direct DB URL from Supabase → Project Settings → Database
-    DATABASE_URL: str
+    DATABASE_URL: str = "sqlite+aiosqlite:///./lexai.db"
 
     # ── Supabase ──────────────────────────────────────────────────────────────
-    SUPABASE_URL: str
+    SUPABASE_URL: str = ""
     # Service-role key — NEVER sent to the frontend
     SUPABASE_SERVICE_ROLE_KEY: str = ""
 
