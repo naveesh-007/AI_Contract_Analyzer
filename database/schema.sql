@@ -201,6 +201,73 @@ CREATE TABLE IF NOT EXISTS chat_sources (
 CREATE INDEX IF NOT EXISTS ix_chat_sources_message_id ON chat_sources (message_id);
 
 -- =============================================================================
+-- TABLE: standard_contract_templates (SRS-S02)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS standard_contract_templates (
+  id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_type VARCHAR(100) NOT NULL UNIQUE, -- 'Rental Agreement', 'Freelance Contract', 'Terms of Service', 'Other'
+  name          VARCHAR(255) NOT NULL,
+  description   TEXT         NOT NULL DEFAULT '',
+  version       VARCHAR(20)  NOT NULL DEFAULT '1.0',
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Auto-update updated_at for standard_contract_templates
+DROP TRIGGER IF EXISTS trg_standard_contract_templates_updated_at ON standard_contract_templates;
+CREATE TRIGGER trg_standard_contract_templates_updated_at
+  BEFORE UPDATE ON standard_contract_templates
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Index for standard_contract_templates
+CREATE INDEX IF NOT EXISTS ix_standard_templates_document_type ON standard_contract_templates (document_type);
+
+-- =============================================================================
+-- TABLE: standard_clauses (SRS-S02)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS standard_clauses (
+  id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_id    UUID         NOT NULL
+                              REFERENCES standard_contract_templates (id) ON DELETE CASCADE,
+  category       VARCHAR(100) NOT NULL, -- 'PAYMENT', 'TERMINATION', 'RENEWAL', 'LIABILITY', 'INDEMNITY', etc.
+  title          VARCHAR(255) NOT NULL,
+  benchmark_text TEXT         NOT NULL,
+  description    TEXT         NOT NULL DEFAULT '',
+  created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for standard_clauses
+CREATE INDEX IF NOT EXISTS ix_standard_clauses_template_id ON standard_clauses (template_id);
+CREATE INDEX IF NOT EXISTS ix_standard_clauses_category    ON standard_clauses (category);
+
+-- =============================================================================
+-- TABLE: clause_comparisons (SRS-S02)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS clause_comparisons (
+  id                 UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id        UUID         NOT NULL
+                                  REFERENCES documents (id) ON DELETE CASCADE,
+  clause_id          UUID         NOT NULL
+                                  REFERENCES clauses (id) ON DELETE CASCADE,
+  standard_clause_id UUID         REFERENCES standard_clauses (id) ON DELETE SET NULL,
+  category           VARCHAR(100) NOT NULL,
+  deviation_level    VARCHAR(10)  NOT NULL CHECK (deviation_level IN ('LOW', 'MEDIUM', 'HIGH')),
+  similarity_score   FLOAT        NOT NULL DEFAULT 0.0,
+  comparison_summary TEXT         NOT NULL DEFAULT '',
+  differences        JSONB        NOT NULL DEFAULT '[]'::jsonb,
+  created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for clause_comparisons
+CREATE INDEX IF NOT EXISTS ix_clause_comparisons_document_id     ON clause_comparisons (document_id);
+CREATE INDEX IF NOT EXISTS ix_clause_comparisons_clause_id       ON clause_comparisons (clause_id);
+CREATE INDEX IF NOT EXISTS ix_clause_comparisons_standard_id     ON clause_comparisons (standard_clause_id);
+CREATE INDEX IF NOT EXISTS ix_clause_comparisons_deviation_level ON clause_comparisons (deviation_level);
+
+-- =============================================================================
 -- Comments (documentation)
 -- =============================================================================
 
@@ -237,3 +304,13 @@ COMMENT ON TABLE chat_messages IS
 
 COMMENT ON TABLE chat_sources IS
   'Retrieved clause and page source citations supporting assistant answers.';
+
+COMMENT ON TABLE standard_contract_templates IS
+  'Standard contract archetype benchmarks (Rental, Freelance, Terms of Service, Other).';
+
+COMMENT ON TABLE standard_clauses IS
+  'Benchmark clause templates for comparison against uploaded contract clauses.';
+
+COMMENT ON TABLE clause_comparisons IS
+  'Evaluated deviation and differences between document clauses and standard benchmarks.';
+

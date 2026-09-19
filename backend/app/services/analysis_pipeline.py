@@ -2,10 +2,12 @@
 Analysis Pipeline Service — orchestrates clause extraction, LLM risk assessment,
 database persistence, and strict count summaries.
 """
+import asyncio
 import logging
 import uuid
 from typing import Optional
 
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.document import Document
@@ -136,11 +138,15 @@ class AnalysisPipeline:
                 }
             )
 
-        # 5. Persist clauses
-        db_clauses = await self.clause_repo.bulk_create_clauses(
+        # 5. Persist clauses (with retry for SQLite lock contention)
+        db_clauses = await self._flush_with_retry(
+            self.clause_repo.bulk_create_clauses,
             document_id=document_id,
             clause_data_list=clauses_to_persist,
         )
+
+        # Commit to release the SQLite write lock between major steps
+        await self.session.commit()
 
         # 6. Strict risk counts calculated from stored clauses
         counts = await self.clause_repo.count_by_risk(document_id)
@@ -159,7 +165,11 @@ class AnalysisPipeline:
             overall_summary=llm_result.overall_summary,
         )
 
-        # 8. Pre-compute and persist document chunks & embeddings for RAG chat
+        # 8. Mark document as ANALYZED
+        await self.doc_repo.update_status(document_id, "ANALYZED")
+        await self.session.commit()
+
+        # 8b. Pre-compute and persist document chunks & embeddings for RAG chat
         try:
             chunker = ChunkingService(self.session)
             await chunker.create_chunks_for_document(
@@ -167,11 +177,22 @@ class AnalysisPipeline:
                 pages=doc.pages,
                 clauses=db_clauses,
             )
+            await self.session.commit()
         except Exception as exc:
             logger.warning("Chunk creation encountered non-fatal error: %s", exc)
+            # Rollback only the failed chunk step, don't lose earlier work
+            await self.session.rollback()
 
-        # 9. Mark document as ANALYZED
-        await self.doc_repo.update_status(document_id, "ANALYZED")
+        # 8c. Pre-compute standard benchmark clause comparisons (SRS-S02)
+        try:
+            from app.services.comparison_service import ComparisonService
+            comp_service = ComparisonService(self.session, self.llm_service)
+            await comp_service.compare_document_clauses(document_id)
+            await self.session.commit()
+        except Exception as exc:
+            logger.warning("Standard comparison pre-computation encountered non-fatal error: %s", exc)
+            await self.session.rollback()
+
 
         summary_out = AnalysisSummaryOut(
             total_clauses=total_clauses,
@@ -187,3 +208,27 @@ class AnalysisPipeline:
             summary=summary_out,
             clauses=[ClauseOut.model_validate(c) for c in db_clauses],
         )
+
+    # ── SQLite retry helper ──────────────────────────────────────────────────
+
+    _RETRY_MAX = 3
+    _RETRY_DELAY = 0.5  # seconds — doubles each retry
+
+    async def _flush_with_retry(self, coro_fn, **kwargs):
+        """
+        Call an async repository method with retry logic for transient
+        SQLite 'database is locked' errors.
+        """
+        for attempt in range(self._RETRY_MAX):
+            try:
+                return await coro_fn(**kwargs)
+            except OperationalError as exc:
+                if "database is locked" in str(exc) and attempt < self._RETRY_MAX - 1:
+                    logger.warning(
+                        "SQLite locked (attempt %d/%d), retrying after %.1fs...",
+                        attempt + 1, self._RETRY_MAX,
+                        self._RETRY_DELAY * (2 ** attempt),
+                    )
+                    await asyncio.sleep(self._RETRY_DELAY * (2 ** attempt))
+                    continue
+                raise

@@ -27,6 +27,13 @@ dist-ssr/
 backend/uploads/*
 !backend/uploads/.gitkeep
 
+# SQLite Databases
+*.db
+*.db-wal
+*.db-shm
+backend/*.db
+
+
 # IDEs & OS
 .DS_Store
 Thumbs.db

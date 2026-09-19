@@ -181,3 +181,40 @@ export async function deleteDocument(documentId: string): Promise<void> {
   await apiClient.delete(`/api/documents/${documentId}`)
 }
 
+// ─── SRS-S02: Standard Clause Comparison ─────────────────────────────────────
+
+import type { DocumentComparisonResponse, StandardTemplate } from '../types/comparison'
+
+/**
+ * Executes or re-runs standard benchmark clause comparison.
+ */
+export async function runDocumentComparison(documentId: string): Promise<DocumentComparisonResponse> {
+  const res = await apiClient.post<DocumentComparisonResponse>(`/api/documents/${documentId}/compare`)
+  return res.data
+}
+
+/**
+ * Fetch standard clause comparisons for a document with optional deviation filtering.
+ */
+export async function getDocumentComparisons(
+  documentId: string,
+  deviationLevel?: string
+): Promise<DocumentComparisonResponse> {
+  const res = await apiClient.get<DocumentComparisonResponse>(
+    `/api/documents/${documentId}/comparisons`,
+    {
+      params: deviationLevel && deviationLevel !== 'ALL' ? { deviation_level: deviationLevel } : undefined,
+    }
+  )
+  return res.data
+}
+
+/**
+ * List all standard benchmark templates and archetype clauses.
+ */
+export async function listBenchmarkTemplates(): Promise<StandardTemplate[]> {
+  const res = await apiClient.get<StandardTemplate[]>('/api/benchmarks/templates')
+  return res.data
+}
+
+

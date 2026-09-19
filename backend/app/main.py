@@ -34,11 +34,22 @@ async def lifespan(app: FastAPI):
     try:
         await create_tables()
         logger.info("Database tables verified/created.")
+
+        # Seed standard benchmark templates (SRS-S02)
+        from app.core.database import AsyncSessionLocal
+        from app.repositories.comparison_repo import ComparisonRepository
+
+        async with AsyncSessionLocal() as session:
+            comp_repo = ComparisonRepository(session)
+            await comp_repo.ensure_seed_templates()
+            await session.commit()
+        logger.info("Standard benchmark templates verified/seeded.")
     except Exception as exc:
-        logger.error("Database connection failed at startup: %s", exc)
+        logger.error("Database initialization failed at startup: %s", exc)
         # Don't crash — let individual requests fail with a clear error
     yield
     logger.info("Shutting down %s", settings.APP_NAME)
+
 
 
 # ── App factory ───────────────────────────────────────────────────────────────

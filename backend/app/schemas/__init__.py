@@ -21,6 +21,15 @@ from app.schemas.clause import (
     PaginatedClausesResponse,
     RiskLevel,
 )
+from app.schemas.comparison import (
+    ClauseComparisonItemOut,
+    ComparisonSummaryStats,
+    DeviationLevel,
+    DocumentComparisonResponse,
+    LLMComparisonResult,
+    StandardClauseOut,
+    StandardTemplateOut,
+)
 from app.schemas.document import (
     DocumentOut,
     DocumentPageOut,
@@ -40,8 +49,12 @@ __all__ = [
     "ChatResponse",
     "ChatSourceOut",
     "ClauseBase",
+    "ClauseComparisonItemOut",
     "ClauseCreate",
     "ClauseOut",
+    "ComparisonSummaryStats",
+    "DeviationLevel",
+    "DocumentComparisonResponse",
     "DocumentOut",
     "DocumentPageOut",
     "DocumentStatus",
@@ -50,7 +63,11 @@ __all__ = [
     "HealthResponse",
     "LLMAnalysisResult",
     "LLMClauseItem",
+    "LLMComparisonResult",
     "PaginatedClausesResponse",
     "RiskLevel",
+    "StandardClauseOut",
+    "StandardTemplateOut",
     "UploadResponse",
 ]
+

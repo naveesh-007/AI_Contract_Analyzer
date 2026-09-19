@@ -14,9 +14,11 @@ import { ClauseList } from '../components/ClauseList'
 import { ClauseDetail } from '../components/ClauseDetail'
 import { DocumentViewer } from '../components/DocumentViewer'
 import { ContractChatPanel } from '../components/ContractChatPanel'
+import { StandardClauseComparison } from '../components/StandardClauseComparison'
 import { LegalDisclaimer } from '../components/LegalDisclaimer'
 import { LoadingState } from '../components/LoadingState'
 import { ErrorMessage } from '../components/ErrorMessage'
+
 import type { Document, DocumentPage } from '../types/document'
 import type { AnalysisSummary, Clause, RiskFilter } from '../types/clause'
 
@@ -39,11 +41,12 @@ export function DocumentAnalysisPage() {
   const [activeFilter, setActiveFilter] = useState<RiskFilter>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
 
-  // Column 3 tab switcher: 'chat' | 'detail'
-  const [rightTab, setRightTab] = useState<'chat' | 'detail'>('chat')
+  // Column 3 tab switcher: 'chat' | 'detail' | 'comparison'
+  const [rightTab, setRightTab] = useState<'chat' | 'detail' | 'comparison'>('chat')
 
-  // Mobile active tab: 'clauses' | 'viewer' | 'detail' | 'chat'
-  const [mobileTab, setMobileTab] = useState<'clauses' | 'viewer' | 'detail' | 'chat'>('clauses')
+  // Mobile active tab: 'clauses' | 'viewer' | 'detail' | 'chat' | 'comparison'
+  const [mobileTab, setMobileTab] = useState<'clauses' | 'viewer' | 'detail' | 'chat' | 'comparison'>('clauses')
+
 
   // Processing & Loading States
   const [loading, setLoading] = useState<boolean>(true)
@@ -401,7 +404,19 @@ export function DocumentAnalysisPage() {
         >
           💡 Detail
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMobileTab('comparison')
+            setRightTab('comparison')
+          }}
+          className={`btn-secondary ${mobileTab === 'comparison' ? 'active' : ''}`}
+          style={{ flex: 1, padding: '8px', fontSize: '11px' }}
+        >
+          ⚖️ Benchmarks
+        </button>
       </div>
+
 
       {/* Main 3-Column Responsive Work Area */}
       <main
@@ -477,7 +492,7 @@ export function DocumentAnalysisPage() {
           />
         </section>
 
-        {/* ─── COLUMN 3 (RIGHT): Tabbed Ask AI Chat + Clause Breakdown ────── */}
+        {/* ─── COLUMN 3 (RIGHT): Tabbed Ask AI Chat + Clause Breakdown + Standard Comparison ─── */}
         <section
           style={{
             height: '100%',
@@ -486,7 +501,7 @@ export function DocumentAnalysisPage() {
             flexDirection: 'column',
             gap: '8px',
           }}
-          className={`column-detail ${mobileTab !== 'detail' && mobileTab !== 'chat' ? 'mobile-hidden' : ''}`}
+          className={`column-detail ${mobileTab !== 'detail' && mobileTab !== 'chat' && mobileTab !== 'comparison' ? 'mobile-hidden' : ''}`}
         >
           {/* Header Mode Switcher Tabs */}
           <div
@@ -497,6 +512,7 @@ export function DocumentAnalysisPage() {
               borderRadius: '10px',
               border: '1px solid var(--color-border)',
               flexShrink: 0,
+              gap: '4px',
             }}
           >
             <button
@@ -505,18 +521,19 @@ export function DocumentAnalysisPage() {
               onClick={() => setRightTab('chat')}
               style={{
                 flex: 1,
-                padding: '8px 12px',
+                padding: '7px 8px',
                 borderRadius: '8px',
                 border: 'none',
                 background: rightTab === 'chat' ? 'var(--color-accent)' : 'transparent',
                 color: rightTab === 'chat' ? '#ffffff' : 'var(--color-text-secondary)',
                 fontWeight: 700,
-                fontSize: '12px',
+                fontSize: '11.5px',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
               }}
             >
-              💬 Ask this Contract
+              💬 Ask AI
             </button>
             <button
               type="button"
@@ -524,24 +541,51 @@ export function DocumentAnalysisPage() {
               onClick={() => setRightTab('detail')}
               style={{
                 flex: 1,
-                padding: '8px 12px',
+                padding: '7px 8px',
                 borderRadius: '8px',
                 border: 'none',
                 background: rightTab === 'detail' ? 'var(--color-accent)' : 'transparent',
                 color: rightTab === 'detail' ? '#ffffff' : 'var(--color-text-secondary)',
                 fontWeight: 700,
-                fontSize: '12px',
+                fontSize: '11.5px',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
               }}
             >
-              💡 Clause Analysis
+              💡 Analysis
+            </button>
+            <button
+              type="button"
+              id="tab-benchmark-compare-btn"
+              onClick={() => setRightTab('comparison')}
+              style={{
+                flex: 1,
+                padding: '7px 8px',
+                borderRadius: '8px',
+                border: 'none',
+                background: rightTab === 'comparison' ? 'var(--color-accent)' : 'transparent',
+                color: rightTab === 'comparison' ? '#ffffff' : 'var(--color-text-secondary)',
+                fontWeight: 700,
+                fontSize: '11.5px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              ⚖️ Benchmarks
             </button>
           </div>
 
           <div style={{ flex: 1, overflow: 'hidden' }}>
             {rightTab === 'chat' ? (
               <ContractChatPanel
+                documentId={docId}
+                clauses={clauses}
+                onSelectClause={handleSelectClause}
+              />
+            ) : rightTab === 'comparison' ? (
+              <StandardClauseComparison
                 documentId={docId}
                 clauses={clauses}
                 onSelectClause={handleSelectClause}
@@ -572,5 +616,6 @@ export function DocumentAnalysisPage() {
         </section>
       </main>
     </div>
+
   )
 }

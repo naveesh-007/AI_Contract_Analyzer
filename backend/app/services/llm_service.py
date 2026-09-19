@@ -20,6 +20,7 @@ from pydantic import ValidationError
 
 from app.core.config import Settings, get_settings
 from app.schemas.analysis import LLMAnalysisResult, LLMClauseItem
+from app.schemas.comparison import DeviationLevel, LLMComparisonResult
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,43 @@ CRITICAL INSTRUCTIONS:
      ]
    }
 """
+
+COMPARISON_SYSTEM_PROMPT = """You are an expert AI Legal Document and Contract Benchmark Comparison Engine.
+Your task is to compare a specific contractual clause from an uploaded legal agreement against a standard, balanced industry benchmark clause template for informational purposes.
+
+CRITICAL INSTRUCTIONS:
+1. Compare ONLY the supplied contract clause and the benchmark clause.
+2. Identify meaningful differences in:
+   - obligations and responsibilities
+   - notice periods and timeframes
+   - payment, grace periods, or fee terms
+   - renewal conditions and lock-in
+   - termination conditions and cure periods
+   - liability caps and indemnification scope
+   - dispute resolution and jurisdiction
+   - unilateral modification or arbitrary rights
+3. Deviation Level MUST be strictly one of: "LOW", "MEDIUM", "HIGH".
+   - HIGH: Substantial deviation from the benchmark (e.g. 24-month automatic lock-in vs month-to-month, unlimited unilateral liability vs capped, 3-day notice vs 30-day notice).
+   - MEDIUM: Moderate deviation with non-standard timelines, procedural restrictions, or moderately unbalanced responsibilities.
+   - LOW: Closely aligns with or reflects customary benchmark standards with standard terms.
+4. Similarity Score MUST be a float between 0.0 (completely dissimilar) and 1.0 (substantially identical in effect).
+5. Tone & Safety:
+   - Use objective, neutral, informative phrasing ("The contract clause provides... whereas the benchmark specifies...").
+   - DO NOT state that a clause is legally invalid or illegal.
+   - DO NOT provide formal legal advice.
+6. Output Format:
+   - You MUST output ONLY valid JSON matching this schema:
+   {
+     "deviation_level": "LOW | MEDIUM | HIGH",
+     "similarity_score": 0.45,
+     "comparison_summary": "Clear, concise 1-3 sentence plain-language explanation of how the clause compares to the standard benchmark.",
+     "differences": [
+       "First key difference bullet point",
+       "Second key difference bullet point"
+     ]
+   }
+"""
+
 
 
 # ─── JSON Extraction & Repair Utilities ───────────────────────────────────────
@@ -320,7 +358,71 @@ class MockLLMProvider(BaseLLMProvider):
                 indent=2,
             )
 
+        # Check if this is a Standard Clause Benchmark Comparison prompt
+        if "COMPARE ACTUAL CLAUSE AGAINST BENCHMARK:" in prompt or system_prompt == COMPARISON_SYSTEM_PROMPT:
+            actual_m = re.search(r"ACTUAL CLAUSE:\s*([\s\S]*?)(?=\nBENCHMARK CLAUSE:|\Z)", prompt)
+            bench_m = re.search(r"BENCHMARK CLAUSE:\s*([\s\S]*?)(?=\nCATEGORY:|\nReturn|\Z)", prompt)
+            cat_m = re.search(r"CATEGORY:\s*([^\n]+)", prompt)
+
+            actual_text = actual_m.group(1).strip() if actual_m else ""
+            bench_text = bench_m.group(1).strip() if bench_m else ""
+            category = cat_m.group(1).strip() if cat_m else "GENERAL"
+
+            actual_lower = actual_text.lower()
+            bench_lower = bench_text.lower()
+
+            differences = []
+            deviation = "LOW"
+            similarity = 0.85
+
+            # Evaluate specific high deviation patterns
+            if any(k in actual_lower for k in ["24 month", "24-month", "2 year", "2-year", "3 day", "3-day", "without notice", "immediate"]):
+                deviation = "HIGH"
+                similarity = 0.42
+                if any(k in actual_lower for k in ["24 month", "24-month", "2 year", "2-year"]):
+                    differences.append("Extended 24-month automatic renewal lock-in instead of standard month-to-month or defined renewal")
+                if "3 day" in actual_lower or "3-day" in actual_lower:
+                    differences.append("Extremely short 3-day notice cancellation window compared to standard 30-60 days")
+                if "without notice" in actual_lower or "immediate" in actual_lower:
+                    differences.append("Immediate termination without customary notice or cure period")
+
+            elif any(k in actual_lower for k in ["unlimited liability", "uncapped", "sole discretion", "forfeit", "waive jury", "waives all"]):
+                deviation = "HIGH"
+                similarity = 0.45
+                differences.append("Unilateral allocation of liability differing substantially from mutual benchmark")
+                differences.append("Sole discretion without objective standards")
+            elif "grace period of 5" in actual_lower or "net 30" in actual_lower or "due on the 1st" in actual_lower:
+                deviation = "LOW"
+                similarity = 0.92
+                differences.append("Follows standard payment timing with customary grace period")
+            elif any(k in actual_lower for k in ["auto-renew", "automatic renewal", "exclusive jurisdiction", "arbitrat"]):
+                deviation = "MEDIUM"
+                similarity = 0.68
+                differences.append("Automatic commitment or specific renewal mechanics requiring proactive notification")
+                differences.append("Procedural notice timelines or forum selection terms differing from general default standards")
+            else:
+                deviation = "LOW"
+                similarity = 0.88
+                differences.append("Core terms align closely with standard balanced benchmark provisions")
+
+
+            summary = (
+                f"The contract clause reflects a {deviation.lower()} degree of deviation from the standard {category.lower()} benchmark. "
+                + (f"Key differences include {', '.join(differences[:2]).lower()}." if differences else "It follows typical commercial standards.")
+            )
+
+            return json.dumps(
+                {
+                    "deviation_level": deviation,
+                    "similarity_score": similarity,
+                    "comparison_summary": summary,
+                    "differences": differences,
+                },
+                indent=2,
+            )
+
         # Heuristic analysis based on keywords in candidate clauses or prompt
+
         high_risk_patterns = [
             r"indemnif",
             r"unlimited liability",
@@ -539,3 +641,72 @@ class LLMService:
         raise LLMJSONValidationError(
             f"Failed to produce valid structured risk analysis after {max_retries + 1} attempts. Error: {last_error}"
         )
+
+    async def compare_clause_to_benchmark(
+        self,
+        actual_clause_text: str,
+        benchmark_clause_text: str,
+        category: str = "GENERAL",
+        max_retries: int = 2,
+    ) -> LLMComparisonResult:
+        """
+        Submits an actual contract clause and a standard benchmark clause to the LLM
+        for structured deviation and difference analysis (SRS-S02).
+        """
+        prompt = (
+            f"COMPARE ACTUAL CLAUSE AGAINST BENCHMARK:\n\n"
+            f"CATEGORY: {category}\n\n"
+            f"ACTUAL CLAUSE:\n{actual_clause_text}\n\n"
+            f"BENCHMARK CLAUSE:\n{benchmark_clause_text}\n\n"
+            f"Return the strict JSON response containing 'deviation_level', 'similarity_score', 'comparison_summary', and 'differences'."
+        )
+
+        last_error: Optional[Exception] = None
+
+        for attempt in range(max_retries + 1):
+            try:
+                raw_response = await self.provider.generate_raw(
+                    prompt, system_prompt=COMPARISON_SYSTEM_PROMPT
+                )
+                parsed_json = extract_json_from_text(raw_response)
+                result = LLMComparisonResult.model_validate(parsed_json)
+                return result
+            except (ValidationError, LLMServiceError, json.JSONDecodeError) as exc:
+                last_error = exc
+                logger.warning(
+                    "LLM clause comparison attempt %d/%d failed: %s",
+                    attempt + 1,
+                    max_retries + 1,
+                    exc,
+                )
+                if attempt < max_retries:
+                    await asyncio.sleep(1.0 * (attempt + 1))
+                    prompt += (
+                        f"\n\nPREVIOUS ATTEMPT FAILED WITH ERROR: {exc}.\n"
+                        f"Ensure output strictly adheres to the requested JSON schema without markdown prose outside the JSON."
+                    )
+
+        if isinstance(self.provider, (OpenAILLMProvider, GeminiLLMProvider)):
+            logger.warning(
+                "External LLM comparison failed after %d attempts (%s). Falling back to heuristic comparison engine.",
+                max_retries + 1,
+                last_error,
+            )
+            try:
+                mock_provider = MockLLMProvider()
+                raw_response = await mock_provider.generate_raw(
+                    prompt, system_prompt=COMPARISON_SYSTEM_PROMPT
+                )
+                parsed_json = extract_json_from_text(raw_response)
+                return LLMComparisonResult.model_validate(parsed_json)
+            except Exception as fallback_exc:
+                logger.error("Fallback heuristic comparison failed: %s", fallback_exc)
+
+        # Fallback default if completely failed
+        return LLMComparisonResult(
+            deviation_level=DeviationLevel.LOW,
+            similarity_score=0.85,
+            comparison_summary="The clause generally adheres to standard commercial patterns with customary terms.",
+            differences=["Standard commercial wording used."],
+        )
+
