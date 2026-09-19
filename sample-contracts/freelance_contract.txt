@@ -1,0 +1,94 @@
+INDEPENDENT CONTRACTOR AGREEMENT
+=================================
+
+This Independent Contractor Agreement ("Agreement") is made as of January 15, 2025,
+between:
+
+Client:     TechVision Startup Inc.
+            88 Innovation Drive, Floor 3
+            San Francisco, CA 94103
+
+Contractor: Alex M. Rivera
+            22 Creative Lane
+            Oakland, CA 94601
+
+1. SERVICES
+-----------
+Contractor agrees to provide the following services ("Services"):
+  - Full-stack web application development using React and Node.js
+  - API design and integration
+  - Code review and technical documentation
+
+Project codename: "Project Nexus"
+
+2. TERM
+-------
+This Agreement shall commence on February 1, 2025, and shall continue until
+the completion of the defined deliverables or July 31, 2025, whichever comes first,
+unless terminated earlier in accordance with this Agreement.
+
+3. COMPENSATION
+---------------
+Client shall pay Contractor at a rate of $120.00 USD per hour.
+Invoices shall be submitted bi-weekly and are due within 15 days of receipt.
+Late payments will accrue interest at 1.5% per month.
+
+4. EXPENSES
+-----------
+Client shall reimburse pre-approved expenses within 30 days of submission of receipts.
+Expenses must be approved in writing before being incurred.
+
+5. INDEPENDENT CONTRACTOR STATUS
+----------------------------------
+Contractor is an independent contractor and not an employee of Client.
+Contractor is responsible for all taxes, insurance, and benefits.
+This Agreement does not create a partnership, joint venture, or agency relationship.
+
+6. INTELLECTUAL PROPERTY
+------------------------
+All work product, inventions, and deliverables produced under this Agreement
+shall be "work made for hire" and shall be the sole property of Client upon full payment.
+Contractor retains no rights to the deliverables after payment is received.
+
+7. CONFIDENTIALITY
+------------------
+Contractor agrees to hold in strict confidence all proprietary information,
+trade secrets, business plans, and technical data disclosed by Client.
+This obligation survives termination of this Agreement for 3 years.
+
+8. NON-SOLICITATION
+--------------------
+During the term and for 12 months thereafter, Contractor agrees not to solicit
+Client's employees or clients without prior written consent.
+
+9. WARRANTY
+-----------
+Contractor warrants that the Services will be performed in a professional and
+workmanlike manner, consistent with industry standards.
+
+10. LIMITATION OF LIABILITY
+----------------------------
+In no event shall either party be liable for indirect, incidental, or consequential
+damages. Client's total liability shall not exceed the total fees paid in the prior
+60 days.
+
+11. TERMINATION
+---------------
+Either party may terminate this Agreement with 14 days' written notice.
+Client may terminate immediately for cause (e.g., material breach, misconduct).
+Upon termination, Contractor shall deliver all work product completed to date.
+
+12. GOVERNING LAW / DISPUTE RESOLUTION
+----------------------------------------
+This Agreement shall be governed by the laws of the State of California.
+Any disputes shall first be submitted to mediation before litigation.
+
+SIGNATURES
+----------
+Client:     _________________________    Date: ___________
+            TechVision Startup Inc.
+
+Contractor: _________________________    Date: ___________
+            Alex M. Rivera
+
+(This is a fictional document created for demonstration purposes only.)

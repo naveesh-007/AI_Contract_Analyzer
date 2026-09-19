@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+.pytest_cache/
+*.log
+
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Environment variables & Secrets
+.env
+.env.local
+.env.development
+.env.production
+*.pem
+*.key
+
+# Application Uploads & Temp Storage
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# IDEs & OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,25 @@
+TERMS OF SERVICE AND USER AGREEMENT
+
+Effective Date: October 1, 2026
+Service Provider: CloudMatrix Technologies LLC
+
+1. ACCEPTANCE OF TERMS
+By accessing or using the CloudMatrix Services ("Service"), you agree to be bound by these Terms of Service. If you do not agree to all of the terms, you may not access or use the Service.
+
+2. ACCOUNT TERMINATION AND CANCELLATION
+CloudMatrix reserves the right to suspend or terminate your account immediately at any time, for any reason or no reason, with or without notice, in its sole discretion. Upon account termination, all user data and stored files may be permanently deleted without refund.
+
+3. AUTOMATIC SUBSCRIPTION RENEWAL AND PAYMENTS
+All paid subscriptions automatically renew at the end of each billing cycle (monthly or annually) unless you cancel your subscription at least 14 days prior to the renewal date. Subscriptions are non-refundable after charge processing.
+
+4. LIMITATION OF LIABILITY
+To the maximum extent permitted by applicable law, CloudMatrix Technologies LLC shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues. Under no circumstances shall CloudMatrix's total aggregate liability exceed $50.00 USD.
+
+5. DATA USAGE AND INTELLECTUAL PROPERTY
+You retain ownership of the content you upload to the Service. However, by uploading content, you grant CloudMatrix a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, and analyze your content for service operation and AI model training.
+
+6. GOVERNING LAW AND DISPUTE VENUE
+This Agreement shall be governed by and construed in accordance with the laws of Delaware, without regard to its conflict of law principles. Any dispute arising hereunder shall be resolved exclusively in state or federal court located in Wilmington, Delaware.
+
+7. AMENDMENTS TO TERMS
+CloudMatrix reserves the right to modify or amend these Terms of Service at any time without prior written notice to users. Continued use of the Service following any changes constitutes acceptance of the modified Terms.
